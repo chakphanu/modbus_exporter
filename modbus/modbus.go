@@ -178,8 +178,12 @@ func scrapeMetrics(definitions []config.MetricDef, c modbus.Client) ([]metric, e
 
 	for _, definition := range definitions {
 		var f modbusFunc
+		var divider config.RegisterAddr = 10000
+		if definition.Address > 99999 {
+			divider = 100000
+		}
 
-		switch definition.Address / 10000 {
+		switch definition.Address / divider {
 		case 1:
 			f = c.ReadCoils
 		case 2:
@@ -235,7 +239,11 @@ func scrapeMetric(definition config.MetricDef, f modbusFunc) (metric, error) {
 	// TODO: We could cache the results to not repeat overlapping ones.
 	// Modulo 10000 as the first digit identifies the modbus function code
 	// (1-4).
-	modBytes, err := f(uint16(definition.Address%10000), div)
+	var modby config.RegisterAddr = 10000
+		if definition.Address > 99999 {
+			modby = 100000
+		}
+	modBytes, err := f(uint16(definition.Address%modby), div)
 	if err != nil {
 		return metric{}, err
 	}
